@@ -66,6 +66,20 @@ std::string Readline::utf32_to_utf8(const std::u32string& str) {
     return result;
 }
 
+bool Readline::check_interrupt() {
+    // Ensure raw mode is set
+    if (!terminal_->is_raw_mode()) {
+        terminal_->set_raw_mode();
+    }
+
+    // Check if there's input available without blocking
+    auto opt_r = terminal_->try_read();
+    if (opt_r && *opt_r == CHAR_INTERRUPT) {
+        return true;
+    }
+    return false;
+}
+
 std::string Readline::readline() {
     // Ensure raw mode is set and I/O thread is running
     if (!terminal_->is_raw_mode()) {

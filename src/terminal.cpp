@@ -226,4 +226,16 @@ std::optional<char> Terminal::read() {
     return c;
 }
 
+std::optional<char> Terminal::try_read() {
+    std::lock_guard<std::mutex> lock(queue_mutex_);
+
+    if (char_queue_.empty()) {
+        return std::nullopt;
+    }
+
+    char c = char_queue_.front();
+    char_queue_.pop();
+    return c;
+}
+
 } // namespace readline

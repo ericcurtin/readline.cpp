@@ -17,8 +17,10 @@ public:
     std::string readline();
     void history_enable() { history_->enabled = true; }
     void history_disable() { history_->enabled = false; }
+    bool check_interrupt();
 
     History* history() { return history_.get(); }
+    Terminal* terminal() { return terminal_.get(); }
     bool is_pasting() const { return pasting_; }
 
 private:

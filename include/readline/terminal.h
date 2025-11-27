@@ -25,6 +25,7 @@ public:
     void unset_raw_mode();
     bool is_raw_mode() const { return raw_mode_; }
     std::optional<char> read();
+    std::optional<char> try_read();
     bool is_terminal(int fd);
 
 private:
