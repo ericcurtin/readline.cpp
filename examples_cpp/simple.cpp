@@ -55,7 +55,7 @@ int main() {
                 std::cout << "You entered: " << line << "\n";
 
             } catch (const readline::eof_error&) {
-                std::cout << "\nEOF detected. Exiting...\n";
+                std::cout << std::endl;
                 break;
             } catch (const readline::interrupt_error&) {
                 std::cout << "\n^C\n";
