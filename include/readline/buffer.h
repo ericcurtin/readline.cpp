@@ -8,8 +8,8 @@
 namespace readline {
 
 struct Prompt {
-    std::string prompt = ">>> ";
-    std::string alt_prompt = "... ";
+    std::string prompt = "> ";
+    std::string alt_prompt = ". ";
     std::string placeholder = "";
     std::string alt_placeholder = "";
     bool use_alt = false;
