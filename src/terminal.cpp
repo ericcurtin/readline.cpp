@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <signal.h>
+#include <cstdio>
 
 namespace readline {
 
@@ -13,8 +14,7 @@ Terminal::Terminal()
         throw std::runtime_error("stdin is not a terminal");
     }
 
-    // Start IO loop thread
-    io_thread_ = std::thread(&Terminal::io_loop, this);
+    // Don't start I/O thread yet - will be started when needed
 }
 
 Terminal::~Terminal() {
@@ -50,11 +50,19 @@ void Terminal::set_raw_mode() {
     raw.c_cc[VMIN] = 1;
     raw.c_cc[VTIME] = 0;
 
-    if (tcsetattr(fd_, TCSANOW, &raw) < 0) {
+    if (tcsetattr(fd_, TCSAFLUSH, &raw) < 0) {
         throw std::runtime_error("Failed to set terminal to raw mode");
     }
 
     raw_mode_ = true;
+
+    // Disable stdout buffering for immediate character display
+    std::setvbuf(stdout, nullptr, _IONBF, 0);
+
+    // Start I/O thread now that raw mode is set
+    if (!io_thread_.joinable()) {
+        io_thread_ = std::thread(&Terminal::io_loop, this);
+    }
 }
 
 void Terminal::unset_raw_mode() {

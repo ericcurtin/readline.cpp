@@ -67,6 +67,7 @@ std::string Readline::utf32_to_utf8(const std::u32string& str) {
 }
 
 std::string Readline::readline() {
+    // Ensure raw mode is set and I/O thread is running
     if (!terminal_->is_raw_mode()) {
         terminal_->set_raw_mode();
     }
@@ -94,7 +95,6 @@ std::string Readline::readline() {
 
         auto opt_r = terminal_->read();
         if (!opt_r) {
-            terminal_->unset_raw_mode();
             throw eof_error();
         }
 
@@ -178,7 +178,6 @@ std::string Readline::readline() {
             esc = true;
             break;
         case CHAR_INTERRUPT:
-            terminal_->unset_raw_mode();
             throw interrupt_error();
         case CHAR_PREV:
             history_prev(&buf, current_line_buf);
@@ -211,7 +210,6 @@ std::string Readline::readline() {
             if (buf.display_size() > 0) {
                 buf.delete_char();
             } else {
-                terminal_->unset_raw_mode();
                 throw eof_error();
             }
             break;
@@ -228,7 +226,6 @@ std::string Readline::readline() {
             buf.delete_word();
             break;
         case CHAR_CTRL_Z:
-            terminal_->unset_raw_mode();
             kill(0, SIGSTOP);
             return "";
         case CHAR_ENTER:
@@ -239,7 +236,6 @@ std::string Readline::readline() {
             }
             buf.move_to_end();
             std::cout << std::endl;
-            terminal_->unset_raw_mode();
             return output;
         }
         default:
