@@ -46,8 +46,8 @@ cmake --build .
 
 int main() {
     readline::Prompt prompt;
-    prompt.prompt = ">>> ";
-    prompt.alt_prompt = "... ";
+    prompt.prompt = "> ";
+    prompt.alt_prompt = ". ";
     prompt.placeholder = "Enter a command";
 
     try {
