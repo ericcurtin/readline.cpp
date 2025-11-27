@@ -12,15 +12,14 @@ A readline implementation providing an interactive line editing interface with h
 - Customizable prompts
 - History persistence
 
-## C++17 Version
+## Building
 
-### Building
-
-The C++17 version uses CMake. To build:
+readline.cpp uses CMake. To build:
 
 ```bash
 # Create build directory
-mkdir build && cd build
+mkdir build
+cd build
 
 # Configure
 cmake ..
@@ -32,13 +31,13 @@ cmake --build .
 ./simple_example
 ```
 
-### Requirements
+## Requirements
 
 - C++17 compiler (GCC 7+, Clang 5+, or MSVC 2017+)
 - CMake 3.14 or higher
 - POSIX-compliant system (Linux, macOS, BSD)
 
-### Using the Library
+## Using the Library
 
 ```cpp
 #include "readline/readline.h"
