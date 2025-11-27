@@ -102,6 +102,14 @@ bool Terminal::is_terminal(void* handle) {
 }
 
 void Terminal::io_loop() {
+    auto push_escape_sequence = [this](const char* seq) {
+        std::lock_guard<std::mutex> lock(queue_mutex_);
+        for (const char* p = seq; *p; ++p) {
+            char_queue_.push(*p);
+        }
+        queue_cv_.notify_one();
+    };
+
     while (!stop_io_loop_) {
         INPUT_RECORD ir;
         DWORD events_read;
@@ -121,54 +129,25 @@ void Terminal::io_loop() {
             WORD vk = ir.Event.KeyEvent.wVirtualKeyCode;
 
             if (vk == VK_UP) {
-                std::lock_guard<std::mutex> lock(queue_mutex_);
-                char_queue_.push('\x1b');
-                char_queue_.push('[');
-                char_queue_.push('A');
-                queue_cv_.notify_one();
+                push_escape_sequence("\x1b[A");
                 continue;
             } else if (vk == VK_DOWN) {
-                std::lock_guard<std::mutex> lock(queue_mutex_);
-                char_queue_.push('\x1b');
-                char_queue_.push('[');
-                char_queue_.push('B');
-                queue_cv_.notify_one();
+                push_escape_sequence("\x1b[B");
                 continue;
             } else if (vk == VK_RIGHT) {
-                std::lock_guard<std::mutex> lock(queue_mutex_);
-                char_queue_.push('\x1b');
-                char_queue_.push('[');
-                char_queue_.push('C');
-                queue_cv_.notify_one();
+                push_escape_sequence("\x1b[C");
                 continue;
             } else if (vk == VK_LEFT) {
-                std::lock_guard<std::mutex> lock(queue_mutex_);
-                char_queue_.push('\x1b');
-                char_queue_.push('[');
-                char_queue_.push('D');
-                queue_cv_.notify_one();
+                push_escape_sequence("\x1b[D");
                 continue;
             } else if (vk == VK_DELETE) {
-                std::lock_guard<std::mutex> lock(queue_mutex_);
-                char_queue_.push('\x1b');
-                char_queue_.push('[');
-                char_queue_.push('3');
-                char_queue_.push('~');
-                queue_cv_.notify_one();
+                push_escape_sequence("\x1b[3~");
                 continue;
             } else if (vk == VK_HOME) {
-                std::lock_guard<std::mutex> lock(queue_mutex_);
-                char_queue_.push('\x1b');
-                char_queue_.push('[');
-                char_queue_.push('H');
-                queue_cv_.notify_one();
+                push_escape_sequence("\x1b[H");
                 continue;
             } else if (vk == VK_END) {
-                std::lock_guard<std::mutex> lock(queue_mutex_);
-                char_queue_.push('\x1b');
-                char_queue_.push('[');
-                char_queue_.push('F');
-                queue_cv_.notify_one();
+                push_escape_sequence("\x1b[F");
                 continue;
             }
 
