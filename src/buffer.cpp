@@ -137,11 +137,11 @@ void Buffer::move_right() {
         if (display_pos_ % line_width_ == 0) {
             std::cout << cursor_down_n(1) << CURSOR_BOL
                      << cursor_right_n(static_cast<int>(prompt_.get_prompt().length()));
-        } else if ((display_pos_ - r_length) % line_width_ == line_width_ - 1 && has_space) {
+        } else if ((display_pos_ - r_length) % line_width_ == static_cast<size_t>(line_width_ - 1) && has_space) {
             std::cout << cursor_down_n(1) << CURSOR_BOL
                      << cursor_right_n(static_cast<int>(prompt_.get_prompt().length()) + r_length);
             display_pos_ += 1;
-        } else if (!line_has_space_.empty() && display_pos_ % line_width_ == line_width_ - 1 && has_space) {
+        } else if (!line_has_space_.empty() && display_pos_ % line_width_ == static_cast<size_t>(line_width_ - 1) && has_space) {
             std::cout << cursor_down_n(1) << CURSOR_BOL
                      << cursor_right_n(static_cast<int>(prompt_.get_prompt().length()));
             display_pos_ += 1;
