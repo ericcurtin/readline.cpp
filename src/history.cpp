@@ -17,7 +17,7 @@ void History::init() {
         throw std::runtime_error("HOME environment variable not set");
     }
 
-    std::filesystem::path history_dir = std::filesystem::path(home) / ".ollama";
+    std::filesystem::path history_dir = std::filesystem::path(home) / ".readline";
     filename_ = history_dir / "history";
 
     // Create directory if it doesn't exist
