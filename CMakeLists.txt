@@ -35,7 +35,7 @@ else()
 endif()
 
 # Example executable
-add_executable(simple_example examples_cpp/simple.cpp)
+add_executable(simple_example examples/simple.cpp)
 target_link_libraries(simple_example PRIVATE readline_cpp)
 
 # Installation rules
