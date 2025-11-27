@@ -89,7 +89,7 @@ std::string Readline::readline() {
         bool show_placeholder = !pasting_ || prompt_.use_alt;
         if (buf.is_empty() && show_placeholder) {
             std::string ph = prompt_.get_placeholder();
-            std::cout << COLOR_GREY << ph << cursor_left_n(ph.length())
+            std::cout << COLOR_GREY << ph << cursor_left_n(static_cast<int>(ph.length()))
                      << COLOR_DEFAULT << std::flush;
         }
 
@@ -226,7 +226,9 @@ std::string Readline::readline() {
             buf.delete_word();
             break;
         case CHAR_CTRL_Z:
+#ifndef _WIN32
             kill(0, SIGSTOP);
+#endif
             return "";
         case CHAR_ENTER:
         case CHAR_CTRL_J: {

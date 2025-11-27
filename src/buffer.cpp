@@ -1,10 +1,18 @@
 #include "readline/buffer.h"
 #include "readline/types.h"
 #include <iostream>
-#include <sys/ioctl.h>
-#include <unistd.h>
 #include <algorithm>
 #include <cstring>
+
+#ifdef _WIN32
+    #define NOMINMAX
+    #include <windows.h>
+    #include <io.h>
+    #define STDOUT_FILENO _fileno(stdout)
+#else
+    #include <sys/ioctl.h>
+    #include <unistd.h>
+#endif
 
 namespace readline {
 
@@ -12,11 +20,19 @@ Buffer::Buffer(const Prompt& prompt)
     : prompt_(prompt) {
 
     // Get terminal size
+#ifdef _WIN32
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+        width_ = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+        height_ = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+    }
+#else
     struct winsize ws;
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) {
         width_ = ws.ws_col;
         height_ = ws.ws_row;
     }
+#endif
 
     line_width_ = width_ - static_cast<int>(prompt_.get_prompt().length());
 }
@@ -95,7 +111,7 @@ void Buffer::move_left() {
                 std::cout << cursor_left_n(1);
             }
 
-            int line = display_pos_ / line_width_ - 1;
+            int line = static_cast<int>(display_pos_ / line_width_) - 1;
             bool has_space = get_line_spacing(line);
             if (has_space) {
                 display_pos_ -= 1;
@@ -120,14 +136,14 @@ void Buffer::move_right() {
 
         if (display_pos_ % line_width_ == 0) {
             std::cout << cursor_down_n(1) << CURSOR_BOL
-                     << cursor_right_n(prompt_.get_prompt().length());
+                     << cursor_right_n(static_cast<int>(prompt_.get_prompt().length()));
         } else if ((display_pos_ - r_length) % line_width_ == line_width_ - 1 && has_space) {
             std::cout << cursor_down_n(1) << CURSOR_BOL
-                     << cursor_right_n(prompt_.get_prompt().length() + r_length);
+                     << cursor_right_n(static_cast<int>(prompt_.get_prompt().length()) + r_length);
             display_pos_ += 1;
         } else if (!line_has_space_.empty() && display_pos_ % line_width_ == line_width_ - 1 && has_space) {
             std::cout << cursor_down_n(1) << CURSOR_BOL
-                     << cursor_right_n(prompt_.get_prompt().length());
+                     << cursor_right_n(static_cast<int>(prompt_.get_prompt().length()));
             display_pos_ += 1;
         } else {
             std::cout << cursor_right_n(r_length);
@@ -165,11 +181,11 @@ void Buffer::move_right_word() {
 
 void Buffer::move_to_start() {
     if (pos_ > 0) {
-        int curr_line = display_pos_ / line_width_;
+        int curr_line = static_cast<int>(display_pos_ / line_width_);
         if (curr_line > 0) {
             std::cout << cursor_up_n(curr_line);
         }
-        std::cout << CURSOR_BOL << cursor_right_n(prompt_.get_prompt().length());
+        std::cout << CURSOR_BOL << cursor_right_n(static_cast<int>(prompt_.get_prompt().length()));
         pos_ = 0;
         display_pos_ = 0;
     }
@@ -177,15 +193,15 @@ void Buffer::move_to_start() {
 
 void Buffer::move_to_end() {
     if (pos_ < buffer_.size()) {
-        int curr_line = display_pos_ / line_width_;
-        int total_lines = display_size() / line_width_;
+        int curr_line = static_cast<int>(display_pos_ / line_width_);
+        int total_lines = static_cast<int>(display_size() / line_width_);
         if (curr_line < total_lines) {
             std::cout << cursor_down_n(total_lines - curr_line);
-            int remainder = display_size() % line_width_;
+            int remainder = static_cast<int>(display_size() % line_width_);
             std::cout << CURSOR_BOL
-                     << cursor_right_n(prompt_.get_prompt().length() + remainder);
+                     << cursor_right_n(static_cast<int>(prompt_.get_prompt().length()) + remainder);
         } else {
-            std::cout << cursor_right_n(display_size() - display_pos_);
+            std::cout << cursor_right_n(static_cast<int>(display_size() - display_pos_));
         }
 
         pos_ = buffer_.size();
@@ -260,7 +276,7 @@ int Buffer::count_remaining_line_width(int place) {
         if (pos_ + counter < buffer_.size()) {
             char32_t r = buffer_[pos_ + counter];
             place += char_width(r);
-            prev_len = to_utf8(r).length();
+            prev_len = static_cast<int>(to_utf8(r).length());
         } else {
             break;
         }
@@ -282,7 +298,7 @@ void Buffer::draw_remaining() {
                                                                remaining_text.length()));
 
     if (!curr_line.empty()) {
-        std::cout << CLEAR_TO_EOL << curr_line << cursor_left_n(curr_line.length());
+        std::cout << CLEAR_TO_EOL << curr_line << cursor_left_n(static_cast<int>(curr_line.length()));
     } else {
         std::cout << CLEAR_TO_EOL;
     }
@@ -369,7 +385,7 @@ void Buffer::delete_word() {
 void Buffer::replace(const std::u32string& text) {
     display_pos_ = 0;
     pos_ = 0;
-    int line_nums = display_size() / line_width_;
+    int line_nums = static_cast<int>(display_size() / line_width_);
 
     buffer_.clear();
 
@@ -390,20 +406,20 @@ void Buffer::clear_screen() {
     std::cout << CLEAR_SCREEN << CURSOR_RESET << prompt_.get_prompt();
     if (is_empty()) {
         std::string ph = prompt_.get_placeholder();
-        std::cout << COLOR_GREY << ph << cursor_left_n(ph.length()) << COLOR_DEFAULT;
+        std::cout << COLOR_GREY << ph << cursor_left_n(static_cast<int>(ph.length())) << COLOR_DEFAULT;
     } else {
         size_t curr_pos = display_pos_;
         size_t curr_index = pos_;
         pos_ = 0;
         display_pos_ = 0;
         draw_remaining();
-        std::cout << CURSOR_RESET << cursor_right_n(prompt_.get_prompt().length());
+        std::cout << CURSOR_RESET << cursor_right_n(static_cast<int>(prompt_.get_prompt().length()));
         if (curr_pos > 0) {
-            int target_line = curr_pos / line_width_;
+            int target_line = static_cast<int>(curr_pos / line_width_);
             if (target_line > 0) {
                 std::cout << cursor_down_n(target_line);
             }
-            int remainder = curr_pos % line_width_;
+            int remainder = static_cast<int>(curr_pos % line_width_);
             if (remainder > 0) {
                 std::cout << cursor_right_n(remainder);
             }
