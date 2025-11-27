@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: ${{ matrix.os }} - ${{ matrix.compiler }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux builds
+          - os: ubuntu-latest
+            compiler: gcc
+            cxx: g++
+            cc: gcc
+          - os: ubuntu-latest
+            compiler: clang
+            cxx: clang++
+            cc: clang
+
+          # macOS builds
+          - os: macos-latest
+            compiler: clang
+            cxx: clang++
+            cc: clang
+          - os: macos-latest
+            compiler: gcc
+            cxx: g++-13
+            cc: gcc-13
+
+          # Windows builds
+          - os: windows-latest
+            compiler: msvc
+            cxx: cl
+            cc: cl
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup MSVC (Windows)
+      if: runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Install GCC (macOS)
+      if: matrix.os == 'macos-latest' && matrix.compiler == 'gcc'
+      run: |
+        brew install gcc@13
+
+    - name: Configure CMake
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
+      env:
+        CC: ${{ matrix.cc }}
+        CXX: ${{ matrix.cxx }}
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: List build artifacts
+      shell: bash
+      run: |
+        echo "Build directory contents:"
+        ls -la build/
+        if [ -f "build/simple_example" ] || [ -f "build/simple_example.exe" ] || [ -f "build/Release/simple_example.exe" ]; then
+          echo "Example binary built successfully"
+        fi
+
+    - name: Run simple example (Linux/macOS)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        echo "exit" | ./build/simple_example || true
+
+    - name: Run simple example (Windows)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        if [ -f "build/Release/simple_example.exe" ]; then
+          echo "exit" | ./build/Release/simple_example.exe || true
+        elif [ -f "build/simple_example.exe" ]; then
+          echo "exit" | ./build/simple_example.exe || true
+        fi
