@@ -35,7 +35,7 @@ cmake --build .
 
 - C++17 compiler (GCC 7+, Clang 5+, or MSVC 2017+)
 - CMake 3.14 or higher
-- POSIX-compliant system (Linux, macOS, BSD)
+- OSes: Linux, macOS, Windows (open to others)
 
 ## Using the Library
 
