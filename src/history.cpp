@@ -3,7 +3,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <cstdlib>
-#include <sys/stat.h>
 
 namespace readline {
 
@@ -13,6 +12,11 @@ History::History() {
 
 void History::init() {
     const char* home = std::getenv("HOME");
+#ifdef _WIN32
+    if (!home) {
+        home = std::getenv("USERPROFILE");
+    }
+#endif
     if (!home) {
         throw std::runtime_error("HOME environment variable not set");
     }

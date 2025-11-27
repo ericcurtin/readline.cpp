@@ -1,10 +1,15 @@
 #include "readline/buffer.h"
 #include "readline/types.h"
 #include <iostream>
-#include <sys/ioctl.h>
-#include <unistd.h>
 #include <algorithm>
 #include <cstring>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sys/ioctl.h>
+#include <unistd.h>
+#endif
 
 namespace readline {
 
@@ -12,11 +17,19 @@ Buffer::Buffer(const Prompt& prompt)
     : prompt_(prompt) {
 
     // Get terminal size
+#ifdef _WIN32
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+        width_ = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+        height_ = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+    }
+#else
     struct winsize ws;
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) {
         width_ = ws.ws_col;
         height_ = ws.ws_row;
     }
+#endif
 
     line_width_ = width_ - static_cast<int>(prompt_.get_prompt().length());
 }

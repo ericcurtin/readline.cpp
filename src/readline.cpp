@@ -1,7 +1,10 @@
 #include "readline/readline.h"
 #include "readline/types.h"
 #include <iostream>
+
+#ifndef _WIN32
 #include <signal.h>
+#endif
 
 namespace readline {
 
@@ -226,7 +229,9 @@ std::string Readline::readline() {
             buf.delete_word();
             break;
         case CHAR_CTRL_Z:
+#ifndef _WIN32
             kill(0, SIGSTOP);
+#endif
             return "";
         case CHAR_ENTER:
         case CHAR_CTRL_J: {
