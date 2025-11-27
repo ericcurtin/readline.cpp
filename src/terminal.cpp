@@ -4,6 +4,27 @@
 #include <iostream>
 #include <signal.h>
 #include <cstdio>
+#include <pthread.h>
+
+namespace {
+    // Dummy signal handler to interrupt blocking reads
+    void sigusr1_handler(int) {
+        // Do nothing - just interrupt the syscall
+    }
+
+    // Install signal handler on first use
+    void install_signal_handler() {
+        static bool installed = false;
+        if (!installed) {
+            struct sigaction sa;
+            sa.sa_handler = sigusr1_handler;
+            sigemptyset(&sa.sa_mask);
+            sa.sa_flags = 0;
+            sigaction(SIGUSR1, &sa, nullptr);
+            installed = true;
+        }
+    }
+}
 
 namespace readline {
 
@@ -18,15 +39,18 @@ Terminal::Terminal()
 }
 
 Terminal::~Terminal() {
-    if (raw_mode_) {
-        unset_raw_mode();
-    }
-
     stop_io_loop_ = true;
     queue_cv_.notify_all();
 
+    // Send a signal to unblock the read() call in the I/O thread
     if (io_thread_.joinable()) {
+        // Give the thread a chance to exit naturally
+        pthread_kill(io_thread_.native_handle(), SIGUSR1);
         io_thread_.join();
+    }
+
+    if (raw_mode_) {
+        unset_raw_mode();
     }
 }
 
